@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Investment Robot — Apple (AAPL)</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg:#f1f5f9; --card:#fff; --hdr:#0f172a;
+    --text:#1e293b; --muted:#64748b; --border:#e2e8f0;
+    --buy:#16a34a; --sell:#dc2626; --hold:#d97706;
+    --blue:#2563eb; --indigo:#6366f1;
+    --r:12px; --sh:0 1px 3px rgba(0,0,0,.07),0 4px 14px rgba(0,0,0,.06);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.55}
+
+  /* Header */
+  header{background:var(--hdr);color:#f8fafc;padding:16px 32px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;box-shadow:0 2px 10px rgba(0,0,0,.35)}
+  .hbrand{font-size:1.05em;font-weight:700;letter-spacing:.2px}.hbrand span{color:#60a5fa}
+  .hmeta{font-size:.78em;color:#94a3b8;text-align:right}
+  .pill{display:inline-flex;align-items:center;gap:5px;background:#064e3b;color:#6ee7b7;border-radius:999px;padding:3px 10px;font-size:.75em;font-weight:700}
+
+  /* Layout */
+  main{max-width:1200px;margin:28px auto;padding:0 20px 60px}
+  section{margin-bottom:22px}
+
+  /* Cards */
+  .card{background:var(--card);border-radius:var(--r);padding:26px 30px;box-shadow:var(--sh);border:1px solid var(--border)}
+  .ctitle{font-size:1.08em;font-weight:700;margin-bottom:5px;display:flex;align-items:center;gap:9px}
+  .ctitle .ic{font-size:1.15em}
+  .csub{font-size:.84em;color:var(--muted);margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--border)}
+
+  /* Decision hero */
+  .hero{background:var(--hdr);border-radius:var(--r);padding:32px;color:#f8fafc;box-shadow:var(--sh);display:grid;grid-template-columns:auto 1fr;gap:30px;align-items:start}
+  .dbadge{font-size:2.8em;font-weight:900;padding:18px 42px;border-radius:10px;color:#fff;background:#16a34a;letter-spacing:3px;text-align:center;box-shadow:0 4px 20px #16a34a55}
+  .dmeta{color:#94a3b8;font-size:.88em;margin-top:8px;text-align:center}
+  .htitle{font-size:1.35em;font-weight:700;margin-bottom:4px}
+  .hsub{color:#94a3b8;font-size:.87em;margin-bottom:14px}
+
+  /* Confidence bar */
+  .clabel{font-size:.82em;color:#94a3b8;margin-bottom:5px}
+  .cbarbg{background:#1e293b;border-radius:999px;height:10px;overflow:hidden;margin-bottom:14px}
+  .cbarfill{height:100%;border-radius:999px;background:#16a34a}
+
+  /* Factor bars */
+  .factors{display:flex;flex-direction:column;gap:9px}
+  .frow{display:flex;align-items:center;gap:10px;font-size:.83em}
+  .fname{width:130px;color:#94a3b8;flex-shrink:0}
+  .fbarbg{flex:1;background:#1e293b;border-radius:999px;height:7px;overflow:hidden}
+  .fbar{height:100%;border-radius:999px}
+  .fval{width:58px;text-align:right;color:#e2e8f0;font-weight:600}
+
+  /* Metrics row */
+  .mgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin-bottom:22px}
+  .mc{background:var(--card);border-radius:var(--r);padding:18px 22px;box-shadow:var(--sh);border:1px solid var(--border);border-left:4px solid #16a34a}
+  .mlbl{font-size:.76em;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:5px}
+  .mval{font-size:1.75em;font-weight:800;line-height:1}
+  .mnote{font-size:.76em;color:var(--muted);margin-top:4px}
+
+  /* Insight box */
+  .insight{background:#f0f9ff;border-left:4px solid #0ea5e9;border-radius:0 8px 8px 0;padding:13px 17px;margin-top:14px;font-size:.86em;color:#0c4a6e}
+  .insight strong{display:block;margin-bottom:4px;color:#0369a1}
+
+  /* Chart wrappers */
+  .cw{position:relative;height:280px;margin:18px 0 4px}
+  .cw-sm{position:relative;height:230px;margin:18px 0 4px}
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:22px;align-items:start}
+
+  /* Sentiment cards */
+  .sgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;margin-bottom:18px}
+  .sc{border-radius:10px;padding:16px;text-align:center}
+  .sv{font-size:2.1em;font-weight:800;line-height:1}
+  .sl{font-size:.78em;margin-top:4px;font-weight:600}
+
+  /* Table */
+  .twrap{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:.875em}
+  thead th{background:#1e293b;color:#f8fafc;padding:11px 13px;text-align:left;font-weight:600;letter-spacing:.3px}
+  tbody td{padding:9px 13px;border-bottom:1px solid var(--border);vertical-align:top}
+  tbody tr:last-child td{border-bottom:none}
+  .news-link{color:var(--text);text-decoration:none}
+  .news-link:hover{color:var(--blue);text-decoration:underline}
+  .badge{display:inline-block;padding:3px 9px;border-radius:999px;font-size:.78em;font-weight:700;letter-spacing:.3px}
+  .just-text{color:#475569;max-width:270px}
+  .source-text{color:var(--muted);font-size:.83em;white-space:nowrap}
+  .date-text{color:#94a3b8;font-size:.78em;white-space:nowrap}
+
+  /* Rationale table */
+  .rat td{padding:10px 13px;border-bottom:1px solid var(--border);font-size:.88em}
+  .rat tr:last-child td{border-bottom:none}
+
+  /* Disclaimer / Footer */
+  .disc{background:#fffbeb;border:1px solid #fbbf24;border-radius:10px;padding:15px 20px;font-size:.84em;color:#92400e;margin-top:22px}
+  footer{text-align:center;color:#94a3b8;font-size:.76em;padding:22px;border-top:1px solid var(--border);margin-top:36px}
+
+  @media(max-width:768px){
+    .mgrid{grid-template-columns:repeat(2,1fr)}
+    .hero{grid-template-columns:1fr}
+    .two-col{grid-template-columns:1fr}
+    header{flex-direction:column;gap:8px;text-align:center}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="hbrand">AI Investment Robot <span>| Apple (AAPL)</span></div>
+    <div class="hmeta">June 07, 2026 at 01:47</div>
+  </div>
+  <div style="text-align:right">
+    <div class="pill">&#128274; 100% Local — Llama 3.2 via Ollama</div>
+    <div class="hmeta" style="margin-top:4px">Data: NewsAPI + Yahoo Finance</div>
+  </div>
+</header>
+
+<main>
+
+<!-- ── DECISION HERO ───────────────────────────────────────────────────── -->
+<section>
+  <div class="hero">
+    <div>
+      <div class="dbadge">BUY</div>
+      <div class="dmeta">Confidence: 56.8% &nbsp;|&nbsp; Score: +0.5678</div>
+    </div>
+    <div>
+      <div class="htitle">Apple (AAPL) — Investment Signal</div>
+      <div class="hsub">Generated on June 07, 2026 at 01:47 · Llama 3.2 running locally via Ollama · No data sent to external AI APIs</div>
+      <div class="clabel">Decision confidence: 56.8%</div>
+      <div class="cbarbg"><div class="cbarfill" style="width:56.8%"></div></div>
+      <div class="factors">
+        <div class="clabel" style="margin-bottom:2px">Score breakdown (weights: Sentiment 45% · Trend 35% · Alpha 20%):</div>
+        <div class="frow">
+          <span class="fname">Sentiment (45%)</span>
+          <div class="fbarbg"><div class="fbar" style="width:6%;background:#dc2626"></div></div>
+          <span class="fval">-0.056</span>
+        </div>
+        <div class="frow">
+          <span class="fname">Price Trend (35%)</span>
+          <div class="fbarbg"><div class="fbar" style="width:35%;background:#16a34a"></div></div>
+          <span class="fval">+0.350</span>
+        </div>
+        <div class="frow">
+          <span class="fname">Alpha S&amp;P500 (20%)</span>
+          <div class="fbarbg"><div class="fbar" style="width:20%;background:#16a34a"></div></div>
+          <span class="fval">+0.200</span>
+        </div>
+        <div class="frow">
+          <span class="fname">Volume Modifier</span>
+          <span style="color:#94a3b8;font-size:.82em">HIGH (+35.5% vs avg) &#8594; ×1.15 (amplified)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── KEY METRICS ────────────────────────────────────────────────────── -->
+<div class="mgrid">
+  <div class="mc">
+    <div class="mlbl">Last Close Price</div>
+    <div class="mval">$307.34</div>
+    <div class="mnote">AAPL · 30-day period</div>
+  </div>
+  <div class="mc">
+    <div class="mlbl">30-Day Return</div>
+    <div class="mval" style="color:#16a34a">+7.00%</div>
+    <div class="mnote">S&amp;P500: +0.25%</div>
+  </div>
+  <div class="mc">
+    <div class="mlbl">Alpha vs S&amp;P 500</div>
+    <div class="mval" style="color:#16a34a">+6.74%</div>
+    <div class="mnote">Outperforming the market</div>
+  </div>
+  <div class="mc">
+    <div class="mlbl">Avg Sentiment Score</div>
+    <div class="mval" style="color:#dc2626">-0.125</div>
+    <div class="mnote">8 articles · scale −1.0 to +1.0</div>
+  </div>
+</div>
+
+<!-- ── SENTIMENT ANALYSIS ─────────────────────────────────────────────── -->
+<section class="card">
+  <div class="ctitle"><span class="ic">&#128240;</span> News Sentiment Analysis</div>
+  <div class="csub">
+    Llama 3.2 (running locally) classified 8 recent news articles about <strong>Apple</strong> into positive, negative, or neutral, with a short justification per article. This signal carries <strong>45% weight</strong> in the final decision — the largest single factor.
+  </div>
+  <div class="sgrid">
+    <div class="sc" style="background:#f0fdf4">
+      <div class="sv" style="color:#16a34a">1</div>
+      <div class="sl" style="color:#15803d">POSITIVE &nbsp;·&nbsp; 12.5%</div>
+    </div>
+    <div class="sc" style="background:#f8fafc">
+      <div class="sv" style="color:#64748b">5</div>
+      <div class="sl" style="color:#475569">NEUTRAL &nbsp;·&nbsp; 62.5%</div>
+    </div>
+    <div class="sc" style="background:#fef2f2">
+      <div class="sv" style="color:#dc2626">2</div>
+      <div class="sl" style="color:#b91c1c">NEGATIVE &nbsp;·&nbsp; 25.0%</div>
+    </div>
+  </div>
+  <div class="two-col">
+    <div><div class="cw-sm"><canvas id="pieChart"></canvas></div></div>
+    <div>
+      <div class="insight">
+        <strong>How to read this chart</strong>
+        The donut shows the proportion of positive, neutral and negative articles. A higher share of positive news pushes the average sentiment score toward <strong>+1.0</strong>, contributing positively to the buy signal.
+        <br><br>
+        <strong>Average sentiment score: -0.125</strong> (scale −1.0 to +1.0). Values above +0.1 are considered bullish; below −0.1 are bearish. Each article receives +1 (positive), 0 (neutral), or −1 (negative); the score is their mean. This contributes <strong>-0.056</strong> to the composite (after applying the 45% weight).
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── PRICE HISTORY & TREND ──────────────────────────────────────────── -->
+<section class="card">
+  <div class="ctitle"><span class="ic">&#128200;</span> Price History &amp; Trend — AAPL (30 Days)</div>
+  <div class="csub">
+    Daily closing price over the last 30 trading days with a <strong>linear regression trend line</strong>. The trend direction and strength carry <strong>35% weight</strong> in the final decision.
+  </div>
+  <div class="cw"><canvas id="priceChart"></canvas></div>
+  <div class="insight">
+    <strong>How to read this chart</strong>
+    The <span style="color:#2563eb;font-weight:700">blue line</span> shows actual daily closing prices. The <span style="color:#dc2626;font-weight:700">dashed red line</span> is the <em>linear regression</em> — a statistical best-fit line that reveals the underlying direction of price, filtering out day-to-day noise.
+    <br><br>
+    <strong>Trend: UPWARD (+0.3902%/day)</strong> — The slope represents how much the price shifts daily as a percentage of its 30-day mean. A positive slope contributes <strong>+0.35</strong> to the score; negative contributes <strong>−0.35</strong>.
+    <br><br>
+    <strong>R² = 0.8463</strong> — The coefficient of determination measures how tightly prices follow the trend line. R² near 1.0 = consistent, reliable trend; R² near 0 = noisy, unpredictable — use this value to gauge how much to trust the trend signal.
+  </div>
+</section>
+
+<!-- ── CUMULATIVE RETURN VS S&P 500 ───────────────────────────────────── -->
+<section class="card">
+  <div class="ctitle"><span class="ic">&#9889;</span> Cumulative Return vs S&amp;P 500 Benchmark (30 Days)</div>
+  <div class="csub">
+    Head-to-head performance: how much AAPL returned compared to the S&amp;P 500 index over the same period. The gap between the lines is the <strong>Alpha</strong>, which carries <strong>20% weight</strong>.
+  </div>
+  <div class="cw"><canvas id="returnChart"></canvas></div>
+  <div class="insight">
+    <strong>How to read this chart</strong>
+    Both lines start at <strong>0%</strong> on the first trading day and show cumulative percentage return. When the <span style="color:#2563eb;font-weight:700">AAPL line</span> is above the <span style="color:#94a3b8;font-weight:700">S&amp;P 500 line</span>, the stock is <em>outperforming</em> the market.
+    <br><br>
+    <strong>Alpha: +6.74%</strong> — AAPL returned <strong>+7.00%</strong> vs the S&amp;P 500's <strong>+0.25%</strong>, meaning the stock is <em>outperforming</em> the market by 6.74%. Positive alpha contributes <strong>+0.20</strong> to the score; negative contributes <strong>−0.20</strong>.
+  </div>
+</section>
+
+<!-- ── VOLUME ANALYSIS ────────────────────────────────────────────────── -->
+<section class="card">
+  <div class="ctitle"><span class="ic">&#128202;</span> Trading Volume (30 Days)</div>
+  <div class="csub">
+    Daily number of shares traded, with the 30-day average shown as a reference line. Volume acts as a <strong>multiplier (±15%)</strong> on the composite score — it does not drive the decision alone but amplifies or dampens the other signals.
+  </div>
+  <div class="cw"><canvas id="volChart"></canvas></div>
+  <div class="insight">
+    <strong>How to read this chart</strong>
+    The <span style="color:#6366f1;font-weight:700">bars</span> show daily trading volume. The <span style="color:#f97316;font-weight:700">dashed orange line</span> is the 30-day average (48,169,454 shares/day). Volume measures market conviction: a price move on high volume is more credible than the same move on thin volume.
+    <br><br>
+    <strong>Volume Signal: HIGH (+35.5% vs 30-day average)</strong> — Last session: 65,246,700 shares. High volume confirms the price movement — the signal is amplified by 15%. Applied modifier to composite score: <strong>×1.15 (amplified)</strong>.
+  </div>
+</section>
+
+<!-- ── DECISION RATIONALE ─────────────────────────────────────────────── -->
+<section class="card">
+  <div class="ctitle"><span class="ic">&#129518;</span> Decision Rationale — Full Score Calculation</div>
+  <div class="csub">
+    Step-by-step breakdown of how the composite score was computed. Decision rule: score &gt; +0.25 &#8594; BUY &nbsp;|&nbsp; score &lt; −0.25 &#8594; SELL &nbsp;|&nbsp; otherwise &#8594; HOLD.
+  </div>
+  <table class="rat">
+    <tbody>
+      <tr>
+        <td style="font-weight:600;width:210px">Sentiment signal</td>
+        <td>avg_score &times; 0.45 = -0.1250 &times; 0.45 = <strong>-0.0563</strong></td>
+        <td style="color:var(--muted);font-size:.84em">1 positive + 5 neutral + 2 negative = avg -0.1250</td>
+      </tr>
+      <tr>
+        <td style="font-weight:600">Price Trend signal</td>
+        <td>sign(+0.3902) &times; 0.35 = <strong>+0.3500</strong></td>
+        <td style="color:var(--muted);font-size:.84em">Slope = +1.181194 USD/day (+0.3902%/day) · R² = 0.8463 · UPWARD</td>
+      </tr>
+      <tr>
+        <td style="font-weight:600">Alpha signal</td>
+        <td>sign(+6.7400) &times; 0.20 = <strong>+0.2000</strong></td>
+        <td style="color:var(--muted);font-size:.84em">AAPL +7.00% − S&amp;P500 +0.25% = alpha +6.74%</td>
+      </tr>
+      <tr>
+        <td style="font-weight:600">Raw composite</td>
+        <td colspan="2">-0.0563 + +0.3500 + +0.2000 = <strong>+0.4937</strong></td>
+      </tr>
+      <tr>
+        <td style="font-weight:600">Volume modifier</td>
+        <td colspan="2">Signal: <strong>HIGH</strong> &#8594; ×1.15 (amplified) &#8594; Final composite: <strong>+0.5678</strong></td>
+      </tr>
+      <tr style="background:#f0fdf4">
+        <td style="font-weight:700;color:#16a34a">FINAL DECISION</td>
+        <td style="font-weight:700;color:#16a34a">BUY &nbsp; (score +0.5678 > +0.25)</td>
+        <td style="color:var(--muted);font-size:.84em">Confidence: 56.8%</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ── NEWS ARTICLES ──────────────────────────────────────────────────── -->
+<section class="card">
+  <div class="ctitle"><span class="ic">&#128478;</span> News Articles Analyzed (8 articles)</div>
+  <div class="csub">
+    Each article (title + summary) was independently sent to Llama 3.2 with a structured prompt asking for a sentiment category and a short justification. Model temperature was set to 0.1 to maximise response consistency.
+  </div>
+  <div class="twrap">
+    <table>
+      <thead><tr><th>Title</th><th>Sentiment</th><th>LLM Justification</th><th>Source</th><th>Date</th></tr></thead>
+      <tbody><tr style="background:#f8fafc"><td><a href="https://www.theverge.com/tech/928141/apple-ios-26-5-rcs-messages-iphone-google-android" target="_blank" class="news-link">Apple brings encrypted RCS chats to iPhone</a></td><td><span class="badge" style="background:#16a34a22;color:#16a34a">POSITIVE</span></td><td class="just-text">introduces secure communication feature to enhance user experience</td><td class="source-text">The Verge</td><td class="date-text">2026-05-11</td></tr>
+<tr style="background:#ffffff"><td><a href="https://www.wired.com/story/memorial-day-tech-deals-2026-1/" target="_blank" class="news-link">Memorial Day Tech Deals: Sony, Apple, Beats (2026)</a></td><td><span class="badge" style="background:#64748b22;color:#64748b">NEUTRAL</span></td><td class="just-text">unrelated to apple's financial performance or market sentiment</td><td class="source-text">Wired</td><td class="date-text">2026-05-22</td></tr>
+<tr style="background:#f8fafc"><td><a href="https://www.theverge.com/tech/929015/apple-studio-display-2026" target="_blank" class="news-link">The Apple Studio Display could have been so much more</a></td><td><span class="badge" style="background:#64748b22;color:#64748b">NEUTRAL</span></td><td class="just-text">mixed sentiment about apple's studio display performance and design.</td><td class="source-text">The Verge</td><td class="date-text">2026-05-13</td></tr>
+<tr style="background:#ffffff"><td><a href="https://www.theverge.com/tech/924706/apple-iphone-siri-intelligence-class-action-lawsuit-settlement" target="_blank" class="news-link">Apple agrees to pay iPhone owners $250 million for not delivering AI Siri</a></td><td><span class="badge" style="background:#dc262622;color:#dc2626">NEGATIVE</span></td><td class="just-text">failure to deliver promised ai feature leads to costly lawsuit settlement</td><td class="source-text">The Verge</td><td class="date-text">2026-05-05</td></tr>
+<tr style="background:#f8fafc"><td><a href="https://www.theverge.com/gadgets/925997/apple-macbook-neo-price-increase-ram" target="_blank" class="news-link">Apple’s $599 MacBook Neo could be at risk from rising RAM prices</a></td><td><span class="badge" style="background:#dc262622;color:#dc2626">NEGATIVE</span></td><td class="just-text">rising ram prices threaten a key selling point of the macbook neo</td><td class="source-text">The Verge</td><td class="date-text">2026-05-07</td></tr>
+<tr style="background:#ffffff"><td><a href="https://www.theverge.com/tech/944245/apple-wwdc-2026-ai-siri-gemini" target="_blank" class="news-link">Here comes new Siri again</a></td><td><span class="badge" style="background:#64748b22;color:#64748b">NEUTRAL</span></td><td class="just-text">suggests that apple's previous attempts at revamping siri were unsuccessful, but this time around it may have an advantage by playing catch-up.</td><td class="source-text">The Verge</td><td class="date-text">2026-06-05</td></tr>
+<tr style="background:#f8fafc"><td><a href="https://www.wired.com/story/apple-will-pay-dollar250-million-to-settle-lawsuit-over-siris-ai-features/" target="_blank" class="news-link">Apple Will Pay $250 Million to Settle Lawsuit Over Siri's AI Features</a></td><td><span class="badge" style="background:#64748b22;color:#64748b">NEUTRAL</span></td><td class="just-text">settlement of a class-action lawsuit over technical features</td><td class="source-text">Wired</td><td class="date-text">2026-05-06</td></tr>
+<tr style="background:#ffffff"><td><a href="https://gizmodo.com/live-updates-from-apple-wwdc-2026-2000765748" target="_blank" class="news-link">Live Updates From Apple WWDC 2026 </a></td><td><span class="badge" style="background:#64748b22;color:#64748b">NEUTRAL</span></td><td class="just-text">lacks specific details about new products or announcements</td><td class="source-text">Gizmodo.com</td><td class="date-text">2026-06-05</td></tr>
+</tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ── DISCLAIMER ─────────────────────────────────────────────────────── -->
+<div class="disc">
+  &#9888;&#65039; <strong>Important Disclaimer:</strong> This report is produced by an automated quantitative analysis system for informational purposes only. It does <strong>not</strong> constitute financial advice, investment recommendation, or a solicitation to buy or sell any security. Past performance is not indicative of future results. Always consult a qualified financial advisor before making investment decisions.
+</div>
+
+</main>
+
+<footer>AI Investment Robot &nbsp;|&nbsp; Developed by Andre Kim Scarton &nbsp;|&nbsp; AAPL &nbsp;·&nbsp; June 07, 2026 at 01:47 &nbsp;·&nbsp; Llama 3.2 via Ollama (local)</footer>
+
+<script>
+const labels    = ["2026-05-06", "2026-05-07", "2026-05-08", "2026-05-11", "2026-05-12", "2026-05-13", "2026-05-14", "2026-05-15", "2026-05-18", "2026-05-19", "2026-05-20", "2026-05-21", "2026-05-22", "2026-05-26", "2026-05-27", "2026-05-28", "2026-05-29", "2026-06-01", "2026-06-02", "2026-06-03", "2026-06-04", "2026-06-05"];
+const prices    = [287.25, 287.18, 293.05, 292.68, 294.8, 298.87, 298.21, 300.23, 297.84, 298.97, 302.25, 304.99, 308.82, 308.33, 310.85, 312.51, 312.06, 306.31, 315.2, 310.26, 311.23, 307.34];
+const trendLine = [290.29, 291.47, 292.65, 293.83, 295.02, 296.2, 297.38, 298.56, 299.74, 300.92, 302.1, 303.28, 304.46, 305.64, 306.83, 308.01, 309.19, 310.37, 311.55, 312.73, 313.91, 315.09];
+const volumes   = [58336100, 45224300, 52692800, 42247300, 45748100, 52684300, 35324900, 54862800, 34483000, 42243600, 38229800, 42965100, 43670200, 48000500, 50430900, 48220400, 70026800, 48849900, 44534700, 50836700, 44869100, 65246700];
+const stockCum  = [0.0, -0.0244, 2.0208, 1.892, 2.63, 4.0469, 3.8172, 4.5204, 3.6884, 4.0818, 5.2236, 6.1775, 7.5109, 7.3403, 8.2176, 8.7955, 8.6388, 6.6371, 9.732, 8.0122, 8.3499, 6.9956];
+const sp500Cum  = [0.0, -0.3803, 0.4591, 0.6479, 0.4866, 1.0744, 1.8482, 0.589, 0.515, -0.1563, 0.9212, 1.0943, 1.4711, 2.0909, 2.1078, 2.6953, 2.9183, 3.1885, 3.3219, 2.5602, 2.9761, 0.2528];
+const avgVol    = [48169454, 48169454, 48169454, 48169454, 48169454, 48169454, 48169454, 48169454, 48169454, 48169454, 48169454, 48169454, 48169454, 48169454, 48169454, 48169454, 48169454, 48169454, 48169454, 48169454, 48169454, 48169454];
+
+const base = {
+  responsive:true, maintainAspectRatio:false,
+  plugins:{ legend:{ labels:{ font:{ size:11 } } } },
+  scales:{
+    x:{ grid:{ color:'#f1f5f9' }, ticks:{ maxTicksLimit:8, font:{ size:10 } } },
+    y:{ grid:{ color:'#f1f5f9' }, ticks:{ font:{ size:10 } } }
+  }
+};
+
+// Price + trend
+new Chart(document.getElementById('priceChart'),{
+  type:'line',
+  data:{ labels, datasets:[
+    { label:'AAPL Close', data:prices, borderColor:'#2563eb', backgroundColor:'rgba(37,99,235,.07)',
+       fill:true, tension:0.3, pointRadius:2, borderWidth:2 },
+    { label:'Trend (Linear Regression)', data:trendLine, borderColor:'#dc2626',
+       borderDash:[6,3], pointRadius:0, fill:false, borderWidth:1.5 }
+  ]},
+  options:{ ...base,
+    plugins:{ ...base.plugins, tooltip:{ callbacks:{ label: c => c.dataset.label+': $'+c.parsed.y.toFixed(2) } } },
+    scales:{ ...base.scales, y:{ ...base.scales.y, ticks:{ ...base.scales.y.ticks, callback: v=>'$'+v } } }
+  }
+});
+
+// Cumulative return vs S&P500
+new Chart(document.getElementById('returnChart'),{
+  type:'line',
+  data:{ labels, datasets:[
+    { label:'AAPL Cumulative Return', data:stockCum, borderColor:'#2563eb', backgroundColor:'rgba(37,99,235,.07)',
+       fill:true, tension:0.3, pointRadius:2, borderWidth:2 },
+    { label:'S&P 500 Cumulative Return', data:sp500Cum, borderColor:'#94a3b8',
+       borderDash:[4,2], pointRadius:0, fill:false, borderWidth:1.5 }
+  ]},
+  options:{ ...base,
+    plugins:{ ...base.plugins, tooltip:{ callbacks:{ label: c => c.dataset.label+': '+c.parsed.y.toFixed(2)+'%' } } },
+    scales:{ ...base.scales, y:{ ...base.scales.y, ticks:{ ...base.scales.y.ticks, callback: v=>v.toFixed(1)+'%' } } }
+  }
+});
+
+// Volume
+new Chart(document.getElementById('volChart'),{
+  type:'bar',
+  data:{ labels, datasets:[
+    { label:'Daily Volume', data:volumes, backgroundColor:'rgba(99,102,241,.55)', borderColor:'rgba(99,102,241,.8)', borderWidth:1 },
+    { label:'30-Day Average', data:avgVol, type:'line', borderColor:'#f97316',
+       borderDash:[5,3], pointRadius:0, fill:false, borderWidth:2 }
+  ]},
+  options:{ ...base,
+    plugins:{ ...base.plugins, tooltip:{ callbacks:{ label: c => c.dataset.label+': '+Number(c.parsed.y).toLocaleString() } } },
+    scales:{ ...base.scales, y:{ ...base.scales.y, ticks:{ ...base.scales.y.ticks, callback: v=>(v/1e6).toFixed(1)+'M' } } }
+  }
+});
+
+// Sentiment donut
+new Chart(document.getElementById('pieChart'),{
+  type:'doughnut',
+  data:{ labels:['Positive','Neutral','Negative'],
+    datasets:[{ data:[1,5,2], backgroundColor:['#16a34a','#94a3b8','#dc2626'],
+      borderWidth:2, borderColor:'#fff', hoverOffset:8 }]
+  },
+  options:{ responsive:true, maintainAspectRatio:false, cutout:'60%',
+    plugins:{ legend:{ position:'bottom', labels:{ padding:14, font:{ size:11 } } } }
+  }
+});
+</script>
+</body>
+</html>
