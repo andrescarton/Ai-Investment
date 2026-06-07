@@ -1,0 +1,25 @@
+# ── Credentials — NEVER commit real keys ──────────────────────────────────────
+.env
+
+# ── Runtime-generated outputs ─────────────────────────────────────────────────
+outputs/
+logs/
+
+# ── macOS metadata junk ───────────────────────────────────────────────────────
+__MACOSX/
+.DS_Store
+
+# ── Claude Code local settings ────────────────────────────────────────────────
+.claude/
+
+# ── Python cache ──────────────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# ── Virtual environments ──────────────────────────────────────────────────────
+venv/
+.venv/
+env/
